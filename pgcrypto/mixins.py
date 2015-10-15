@@ -34,6 +34,8 @@ class PGPMixin:
     `PGPMixin` uses 'pgcrypto' to encrypt data in a postgres database.
     """
     descriptor_class = EncryptedProxyField
+    safe_value = 'REDACTED'
+
 
     def __init__(self, *args, **kwargs):
         """`max_length` should be set to None as encrypted text size is variable."""

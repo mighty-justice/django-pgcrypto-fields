@@ -1,3 +1,6 @@
+from django.conf import settings
+from django.db.utils import InternalError
+
 class EncryptedProxyField:
     """Descriptor for encrypted values.
 
@@ -35,9 +38,14 @@ class EncryptedProxyField:
             return value
 
         if isinstance(value, memoryview):
-            kwargs = {self.field.name: self.aggregate(self.field.name)}
-            kw_value = self.model.objects.filter(pk=instance.pk).aggregate(**kwargs)
-            instance.__dict__[self.field.name] = kw_value[self.field.name]
+            try:
+                kwargs = {self.field.name: self.aggregate(self.field.name)}
+                kw_value = self.model.objects.filter(pk=instance.pk).aggregate(**kwargs)
+                instance.__dict__[self.field.name] = kw_value[self.field.name]
+            except InternalError as e:
+                if settings.OVERRIDE_WRONG_KEY and str(e) == 'Wrong key\n':
+                    return self.field.safe_value
+                raise
 
         return instance.__dict__[self.field.name]
 
